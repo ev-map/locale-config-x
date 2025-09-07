@@ -24,6 +24,7 @@ package com.github.erfansn.localeconfigx
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.AssetManager
 import android.content.res.XmlResourceParser
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.LocaleManagerCompat
@@ -83,26 +84,22 @@ private fun Context.findLocaleConfigId(): Int {
      won't necessarily open the base APK's manifest, which contains the desired localeConfig
      attribute. So we have to iterate over all possible APK files and check each one whether it
      has a localeConfig. */
-    var cookie = 0
     var id = -1
 
-    while (id == -1) {
-        try {
-            resources.assets.openXmlResourceParser(cookie, "AndroidManifest.xml").use {
-                while (it.eventType != XmlPullParser.END_DOCUMENT) {
-                    if (it.eventType == XmlPullParser.START_TAG && it.name == "application") {
-                        id = it.getAttributeResourceValue(
-                            it.indexOfAttribute("localeConfig"),
-                            -1
-                        )
-                        break
-                    }
-                    it.next()
-                }
+    val am = AssetManager::class.java.constructors[0].newInstance()
+    val addAssetPath = AssetManager::class.java.getMethod("addAssetPath", String::class.java)
+    val cookie = addAssetPath.invoke(am, applicationInfo.sourceDir) as Int
+
+    resources.assets.openXmlResourceParser(cookie, "AndroidManifest.xml").use {
+        while (it.eventType != XmlPullParser.END_DOCUMENT) {
+            if (it.eventType == XmlPullParser.START_TAG && it.name == "application") {
+                id = it.getAttributeResourceValue(
+                    it.indexOfAttribute("localeConfig"),
+                    -1
+                )
+                break
             }
-            cookie += 1
-        } catch (e: FileNotFoundException) {
-            break  // reached end of available APK files
+            it.next()
         }
     }
     val localeConfigId = id.takeIf { it != -1 }
