@@ -86,11 +86,11 @@ private fun Context.findLocaleConfigId(): Int {
      has a localeConfig. */
     var id = -1
 
-    val am = AssetManager::class.java.constructors[0].newInstance()
+    val am = AssetManager::class.java.constructors[0].newInstance() as AssetManager
     val addAssetPath = AssetManager::class.java.getMethod("addAssetPath", String::class.java)
     val cookie = addAssetPath.invoke(am, applicationInfo.sourceDir) as Int
 
-    resources.assets.openXmlResourceParser(cookie, "AndroidManifest.xml").use {
+    am.openXmlResourceParser(cookie, "AndroidManifest.xml").use {
         while (it.eventType != XmlPullParser.END_DOCUMENT) {
             if (it.eventType == XmlPullParser.START_TAG && it.name == "application") {
                 id = it.getAttributeResourceValue(
